@@ -1,7 +1,14 @@
 from flask import Flask, request, redirect, url_for, render_template, flash
 from markupsafe import escape
-import os
+import os, glob
 from werkzeug.utils import secure_filename
+import cv2 as cv
+import utlis
+
+# remove all files in the output folder before starting the app
+files = glob.glob('static/output/*')
+for f in files:
+    os.remove(f)
 
 UPLOAD_FOLDER = '/static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -10,6 +17,56 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
+
+# read the img file
+filename = 'static/test.001.jpeg'
+if not os.path.isfile(filename):
+    print(f"File '{filename}' does not exist")
+    exit(1)
+img = cv.imread(filename)
+if img is None:
+    print(f"Failed to load image '{filename}]")
+    exit(1)
+
+
+# convert img to grayscale
+gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+gray = cv.bilateralFilter(gray, 11, 17, 17)
+# detect edges in the image
+edges = cv.Canny(gray, 100, 200)
+
+# apply a closing operation to close gaps in between object edges
+kernel = cv.getStructuringElement(cv.MORPH_RECT, (7, 7))
+closed = cv.morphologyEx(edges, cv.MORPH_CLOSE, kernel)
+
+i = 0
+# find all contours
+imgOrigin = img.copy() # copy of the original image for display purposes
+cnts, heir = cv.findContours(closed.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
+for c in cnts:
+    peri = cv.arcLength(c, True)
+    approx = cv.approxPolyDP(c, 0.02 * peri, True)
+    # draw the contours
+    cv.drawContours(img, [approx], -1, (0, 255, 0), 2)
+    x, y, w, h = cv.boundingRect(c)
+    if h > 0 and w > 0:
+        # check if height and width are greater than 0
+        newImage = img[max(0, y): min(img.shape[0], y + h), max(0, x): min(img.shape[1], x + w)].copy()
+        cv.imwrite('static/output/segment_' + str(i) + '.jpg', newImage)
+        print(f'Image saved as /static/segment_{i}.jpg')
+        i += 1
+
+# img array for display
+imgArray = ([imgOrigin, gray], [edges, img])
+# img labels for display
+labels = [["Original", "Gray"], ["Edges", "Contours"]]
+
+stackedImages = utlis.stackImages(imgArray,0.6,labels)
+cv.imshow('result', stackedImages)
+cv.waitKey(0)
+cv.destroyAllWindows()
+
+
 
 
 # build a URL for the static file
