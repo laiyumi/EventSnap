@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}Login{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+{% endblock %}
+{% block content %}
+    <h1>Login Page</h1>
+    {% if error %}
+        <p>Error: </p>
+    {% else %}
+        <p>Login sucessfully!</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block title %}EventSnap{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+{% endblock %}
+{% block content %}
+    <h1>This is the home page</h1>
+    <form method="POST" enctype="multipart/form-data" action="../static/uploads/">
+        <input type="file" name="photo" accept="image/jpeg">
+        <input type="submit" value="Upload photo">
+    </form>
+{% endblock %}

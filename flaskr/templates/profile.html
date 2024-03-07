@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block title %}Profile{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+{% endblock %}
+{% block content %}
+    <h1>Profile Page</h1>
+    <div>
+        {% if username %}
+            Hello {{ username }}!
+        {% else %}
+            User lists
+        {% endif %}
+    </div>
+{% endblock %}

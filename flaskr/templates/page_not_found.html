@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Page not found{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+{% endblock %}
+{% block content %}
+    <h1>404: Page not found!!</h1>
+    <p class="important">
+        The page you were looking for was not found.
+{% endblock %}

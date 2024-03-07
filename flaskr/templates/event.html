@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}Event{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+{% endblock %}
+{% block content %}
+    <h1>Event Detail</h1>
+    <div>
+        {% if event_id %}
+            <p>Event ID: {{ event_id }}</p>
+        {% else %}
+            <p>Event ID: None</p>
+        {% endif %}
+        <p>Event Name: xxx</p>
+        <p>Event Date: xxx</p>
+        <p>Event Location: xxx</p>
+        <p>Event Description: xxx</p>
+{% endblock %}
