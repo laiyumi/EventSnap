@@ -4,6 +4,9 @@ import os, glob
 from werkzeug.utils import secure_filename
 import cv2 as cv
 import utlis
+from pyzbar.pyzbar import decode
+import numpy as np
+import json
 
 # remove all files in the output folder before starting the app
 files = glob.glob('static/output/*')
@@ -18,8 +21,16 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 
+# load existing data
+data = {}
+# Check if file exists and is not empty
+if os.path.isfile('data.json') and os.stat('data.json').st_size != 0:
+    with open('data.json', 'r') as file:
+        # If file exists and is not empty, load its contents into 'data'
+        data = json.load(file)
+
 # read the img file
-filename = 'static/test.001.jpeg'
+filename = 'static/test_qrcode.jpeg'
 if not os.path.isfile(filename):
     print(f"File '{filename}' does not exist")
     exit(1)
@@ -28,6 +39,25 @@ if img is None:
     print(f"Failed to load image '{filename}]")
     exit(1)
 
+# decode the QR code
+for qrcode in decode(img):
+    # read the data
+    myData = qrcode.data.decode('utf-8')
+    print(f'QR code data: {myData}')
+
+    # draw a bounding box around the QR code
+    pts = np.array([qrcode.polygon], np.int32)
+    pts = pts.reshape((-1, 1, 2))
+    cv.polylines(img, [pts], True, (255, 0, 255), 3)
+
+    # print out the message in the QR code
+    pts2 = qrcode.rect
+    cv.putText(img, myData, (pts2[0], pts2[1]), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 2)
+
+    # write data to the json file
+    with open('data.json', 'w') as outfile:
+        data[len(data)] = myData  # add new data to the 'data' dictionary
+        json.dump(data, outfile, indent=4)  # write 'data' to the file
 
 # convert img to grayscale
 gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -53,8 +83,8 @@ for c in cnts:
         # check if height and width are greater than 0
         newImage = img[max(0, y): min(img.shape[0], y + h), max(0, x): min(img.shape[1], x + w)].copy()
         cv.imwrite('static/output/segment_' + str(i) + '.jpg', newImage)
-        print(f'Image saved as /static/segment_{i}.jpg')
         i += 1
+print(f'Completed image segmentation and saved in /static/')
 
 # img array for display
 imgArray = ([imgOrigin, gray], [edges, img])
