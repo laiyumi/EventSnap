@@ -8,13 +8,67 @@ from pyzbar.pyzbar import decode
 import numpy as np
 import json
 import pytesseract
+from openai import OpenAI
+from dotenv import load_dotenv
+import base64
+import requests
 
-# remove all files in the output folder before starting the app
+
+#################### Housekeeping ####################
 files = glob.glob('static/output/*')
 for f in files:
     os.remove(f)
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+#################### OpenAI ####################
+load_dotenv()
+api_key = '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'
+
+# Given the poster, summary the key information of the event, 
+# including event name, host, date, time, location, event type(in person or virtual), sign up link, and event website
+
+# Function to encode the image
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+
+# Path to your image
+image_path = "static/digital_poster_3.png"
+
+# Getting the base64 string
+base64_image = encode_image(image_path)
+
+headers = {
+  "Content-Type": "application/json",
+  "Authorization": f"Bearer {api_key}"
+}
+
+payload = {
+  "model": "gpt-4-vision-preview",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What’s in this image?"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image}"
+          }
+        }
+      ]
+    }
+  ],
+  "max_tokens": 300
+}
+
+response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+response_json = response.json()
+
+print(json.dumps(response_json, indent=4)) 
+
 
 UPLOAD_FOLDER = '/static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -33,7 +87,7 @@ if os.path.isfile('data.json') and os.stat('data.json').st_size != 0:
         data = json.load(file)
 
 # read the img file
-filename = 'static/test_qrcode.jpeg'
+filename = 'static/digital_poster_3.png'
 if not os.path.isfile(filename):
     print(f"File '{filename}' does not exist")
     exit(1)
@@ -42,14 +96,31 @@ if img is None:
     print(f"Failed to load image '{filename}]")
     exit(1)
 
-# print the text in the image
-print(f'Extracting text from the image: \n' + pytesseract.image_to_string(img))
+#################### Extract Text ####################
+pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+# print(f'---- Start extracting text from origin img ---- \n' + pytesseract.image_to_boxes(img) + f'\n---- End extracting text ----')
 
+# detecting characters and disply the result
+hImg, wImg, _ = img.shape
+boxes = pytesseract.image_to_boxes(img)
+for b in boxes.splitlines():
+    # convert b to a list
+    b = b.split(' ')
+    # print(b)
+    # identity the position of the characters
+    x, y, w, h = int(b[1]), int(b[2]), int(b[3]), int(b[4])
+    # draw a rectangle around the characters
+    cv.rectangle(img, (x, hImg - y), (w, hImg - h), (0, 0, 255), 2)
+    cv.putText(img, b[0], (x, hImg - y + 25), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+# cv.imshow('result', img)
+
+################## Extract QR code ####################`
 # decode the QR code
 for qrcode in decode(img):
     # read the data
     myData = qrcode.data.decode('utf-8')
-    print(f'QR code data: {myData}')
+    print(f'----> QR code data: {myData} <----')
 
     # draw a bounding box around the QR code
     pts = np.array([qrcode.polygon], np.int32)
@@ -65,6 +136,7 @@ for qrcode in decode(img):
         data[len(data)] = myData  # add new data to the 'data' dictionary
         json.dump(data, outfile, indent=4)  # write 'data' to the file
 
+################## Image Segmentation ####################
 # convert img to grayscale
 gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 gray = cv.bilateralFilter(gray, 11, 17, 17)
@@ -74,6 +146,10 @@ edges = cv.Canny(gray, 100, 200)
 # apply a closing operation to close gaps in between object edges
 kernel = cv.getStructuringElement(cv.MORPH_RECT, (7, 7))
 closed = cv.morphologyEx(edges, cv.MORPH_CLOSE, kernel)
+
+# print(f'---- Start extracting text from gray img ---- \n' + pytesseract.image_to_string(gray) + f'\n---- End extracting text ----')
+# print(f'---- Start extracting text from edges img ---- \n' + pytesseract.image_to_string(edges) + f'\n---- End extracting text ----')
+
 
 i = 0
 # find all contours
@@ -92,13 +168,14 @@ for c in cnts:
         i += 1
 print(f'Completed image segmentation and saved in /static/')
 
+################## Display the results ####################
 # img array for display
 imgArray = ([imgOrigin, gray], [edges, img])
 # img labels for display
 labels = [["Original", "Gray"], ["Edges", "Contours"]]
 
 stackedImages = utlis.stackImages(imgArray,0.6,labels)
-cv.imshow('result', stackedImages)
+# cv.imshow('result', stackedImages)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
