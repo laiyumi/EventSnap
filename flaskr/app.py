@@ -7,11 +7,14 @@ import utlis
 from pyzbar.pyzbar import decode
 import numpy as np
 import json
+import pytesseract
 
 # remove all files in the output folder before starting the app
 files = glob.glob('static/output/*')
 for f in files:
     os.remove(f)
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 UPLOAD_FOLDER = '/static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -38,6 +41,9 @@ img = cv.imread(filename)
 if img is None:
     print(f"Failed to load image '{filename}]")
     exit(1)
+
+# print the text in the image
+print(f'Extracting text from the image: \n' + pytesseract.image_to_string(img))
 
 # decode the QR code
 for qrcode in decode(img):
