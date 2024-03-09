@@ -21,10 +21,10 @@ for f in files:
 
 #################### OpenAI ####################
 load_dotenv()
-api_key = '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'
+api_key = os.getenv("OPENAI_API_KEY")
 
-# Given the poster, summary the key information of the event, 
-# including event name, host, date, time, location, event type(in person or virtual), sign up link, and event website
+if api_key is None:
+    raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
 
 # Function to encode the image
 def encode_image(image_path):
@@ -32,10 +32,11 @@ def encode_image(image_path):
     return base64.b64encode(image_file.read()).decode('utf-8')
 
 # Path to your image
-image_path = "static/digital_poster_3.png"
+image_path = "static/single_poster_3.jpg"
 
 # Getting the base64 string
 base64_image = encode_image(image_path)
+
 
 headers = {
   "Content-Type": "application/json",
@@ -50,24 +51,37 @@ payload = {
       "content": [
         {
           "type": "text",
-          "text": "What’s in this image?"
+          "text": '''
+                Please read the text in this image and return the information in the following JSON format(note xxx is placeholder, if the information is not available in the image,put"N/A" instead). 
+                {"eventName":xxx,"Date":dd/mm/yyyy(if the year is not specific, put "2024" as defalut),"Time":xxx(hh:mm PM/AM timezone),
+                "Location":xxx,"Host":list all hosts,"Type":in person or virtual(if both, then put "virtual and in-person"),
+                "Website":xxx,"SignUpLink":if there is a QRcode, put "Yes"}
+                ''',
         },
         {
           "type": "image_url",
           "image_url": {
             "url": f"data:image/jpeg;base64,{base64_image}"
           }
-        }
+        },
       ]
     }
   ],
   "max_tokens": 300
 }
+api_url = "https://api.openai.com/v1/chat/completions"
+print("API Endpoint URL:", api_url)
 
-response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+response = requests.post(api_url, headers=headers, json=payload)
 response_json = response.json()
 
-print(json.dumps(response_json, indent=4)) 
+# print(json.dumps(response_json, indent=2)) 
+
+content_value = response_json['choices'][0]['message']['content'] 
+# print({content_value})
+cleaned_content = content_value.replace("json", "").replace("```", "").replace("\n", "").strip()
+print(f' clean content: {cleaned_content}')
+
 
 
 UPLOAD_FOLDER = '/static/uploads'
@@ -87,13 +101,12 @@ if os.path.isfile('data.json') and os.stat('data.json').st_size != 0:
         data = json.load(file)
 
 # read the img file
-filename = 'static/digital_poster_3.png'
-if not os.path.isfile(filename):
-    print(f"File '{filename}' does not exist")
+if not os.path.isfile(image_path):
+    print(f"File '{image_path}' does not exist")
     exit(1)
-img = cv.imread(filename)
+img = cv.imread(image_path)
 if img is None:
-    print(f"Failed to load image '{filename}]")
+    print(f"Failed to load image '{image_path}]")
     exit(1)
 
 #################### Extract Text ####################
@@ -120,7 +133,10 @@ for b in boxes.splitlines():
 for qrcode in decode(img):
     # read the data
     myData = qrcode.data.decode('utf-8')
-    print(f'----> QR code data: {myData} <----')
+    if myData:
+        print(f'----> QR code data: {myData} <----')
+    else:
+        print(f'----> Cannot extract QR code / No QR code <----')
 
     # draw a bounding box around the QR code
     pts = np.array([qrcode.polygon], np.int32)
@@ -132,9 +148,27 @@ for qrcode in decode(img):
     cv.putText(img, myData, (pts2[0], pts2[1]), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 2)
 
     # write data to the json file
-    with open('data.json', 'w') as outfile:
-        data[len(data)] = myData  # add new data to the 'data' dictionary
-        json.dump(data, outfile, indent=4)  # write 'data' to the file
+    # with open('data.json', 'w') as outfile:
+    #     data[len(data)] = myData  
+    #     json.dump(data, outfile, indent=4) 
+    
+# write the event data to the json file
+# convert JSON string to dictionary
+data_dict = json.loads(cleaned_content)
+parse_data = {
+    data_dict["eventName"]: {
+        "date": data_dict["Date"],
+        "time": data_dict["Time"],
+        "location": data_dict["Location"],
+        "host": data_dict["Host"],
+        "type": data_dict["Type"],
+        "website": data_dict["Website"],
+        "signUpLink": myData
+    }
+}
+
+with open('data.json', 'w') as outfile:
+    json.dump(parse_data, outfile, indent=4)  
 
 ################## Image Segmentation ####################
 # convert img to grayscale

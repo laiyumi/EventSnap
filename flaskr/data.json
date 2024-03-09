@@ -1,8 +1,16 @@
 {
-    "0": "https://www.canva.com/templates/EAEvfoMZGK4-orange-and-black-colorful-blocks-arts-bio-link-website/",
-    "1": "https://forms.gle/nr153GqE8C7bfSYU6",
-    "2": "https://forms.gle/nr153GqE8C7bfSYU6",
-    "3": "https://forms.gle/nr153GqE8C7bfSYU6",
-    "4": "https://forms.gle/nr153GqE8C7bfSYU6",
-    "5": "https://forms.gle/nr153GqE8C7bfSYU6"
+    "European Career Fair at MIT": {
+        "date": "02/03/2024",
+        "time": "9am - 4pm",
+        "location": "Johnson Track, MIT",
+        "host": [
+            "ZEISS",
+            "MIT EUROPEAN CLUB",
+            "ACADEMICTRANSFER",
+            "Climeworks"
+        ],
+        "type": "in person",
+        "website": "euro-career.mit.edu",
+        "signUpLink": "http://tinyurl.com/Ecf2024students"
+    }
 }
