@@ -1,15 +1,16 @@
 {
-    "European Career Fair at MIT": {
+    "event_1": {
+        "name": "European Career Fair at MIT",
         "date": "02/03/2024",
         "time": "9am - 4pm",
-        "location": "Johnson Track, MIT",
-        "host": [
+        "location": "Johnson Race Track, MIT",
+        "hosts": [
             "ZEISS",
             "MIT EUROPEAN CLUB",
             "ACADEMICTRANSFER",
             "Climeworks"
         ],
-        "type": "in person",
+        "type": "in-person",
         "website": "euro-career.mit.edu",
         "signUpLink": "http://tinyurl.com/Ecf2024students"
     }

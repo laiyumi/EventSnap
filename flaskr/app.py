@@ -19,6 +19,15 @@ files = glob.glob('static/output/*')
 for f in files:
     os.remove(f)
 
+# Create a new Flask instance
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+# Configure upload folder and allowed file extensions
+UPLOAD_FOLDER = '/static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 #################### OpenAI ####################
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -54,7 +63,7 @@ payload = {
           "text": '''
                 Please read the text in this image and return the information in the following JSON format(note xxx is placeholder, if the information is not available in the image,put"N/A" instead). 
                 {"eventName":xxx,"Date":dd/mm/yyyy(if the year is not specific, put "2024" as defalut),"Time":xxx(hh:mm PM/AM timezone),
-                "Location":xxx,"Host":list all hosts,"Type":in person or virtual(if both, then put "virtual and in-person"),
+                "Location":xxx,"Hosts":list all hosts,"Type":in person or virtual(if both, then put "virtual and in-person"),
                 "Website":xxx,"SignUpLink":if there is a QRcode, put "Yes"}
                 ''',
         },
@@ -84,13 +93,8 @@ print(f' clean content: {cleaned_content}')
 
 
 
-UPLOAD_FOLDER = '/static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
-# Create a new Flask instance
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
+
 
 # load existing data
 data = {}
@@ -155,20 +159,25 @@ for qrcode in decode(img):
 # write the event data to the json file
 # convert JSON string to dictionary
 data_dict = json.loads(cleaned_content)
-parse_data = {
-    data_dict["eventName"]: {
+
+# Determine the next event key
+event_keys = [key for key in data.keys() if key.startswith('event_')]
+next_event_number = 1 if not event_keys else max([int(key.split('_')[1]) for key in event_keys]) + 1
+next_event_key = f'event_{next_event_number}'
+
+data[next_event_key] = {
+        "name": data_dict["eventName"],
         "date": data_dict["Date"],
         "time": data_dict["Time"],
         "location": data_dict["Location"],
-        "host": data_dict["Host"],
+        "hosts": data_dict["Hosts"],
         "type": data_dict["Type"],
         "website": data_dict["Website"],
         "signUpLink": myData
-    }
 }
 
 with open('data.json', 'w') as outfile:
-    json.dump(parse_data, outfile, indent=4)  
+    json.dump(data, outfile, indent=4)  
 
 ################## Image Segmentation ####################
 # convert img to grayscale
@@ -194,13 +203,14 @@ for c in cnts:
     approx = cv.approxPolyDP(c, 0.02 * peri, True)
     # draw the contours
     cv.drawContours(img, [approx], -1, (0, 255, 0), 2)
-    x, y, w, h = cv.boundingRect(c)
-    if h > 0 and w > 0:
-        # check if height and width are greater than 0
-        newImage = img[max(0, y): min(img.shape[0], y + h), max(0, x): min(img.shape[1], x + w)].copy()
-        cv.imwrite('static/output/segment_' + str(i) + '.jpg', newImage)
-        i += 1
-print(f'Completed image segmentation and saved in /static/')
+
+#     x, y, w, h = cv.boundingRect(c)
+#     if h > 0 and w > 0:
+#         # check if height and width are greater than 0
+#         newImage = img[max(0, y): min(img.shape[0], y + h), max(0, x): min(img.shape[1], x + w)].copy()
+#         cv.imwrite('static/output/segment_' + str(i) + '.jpg', newImage)
+#         i += 1
+# print(f'Completed image segmentation and saved in /static/')
 
 ################## Display the results ####################
 # img array for display
@@ -209,11 +219,9 @@ imgArray = ([imgOrigin, gray], [edges, img])
 labels = [["Original", "Gray"], ["Edges", "Contours"]]
 
 stackedImages = utlis.stackImages(imgArray,0.6,labels)
-# cv.imshow('result', stackedImages)
+cv.imshow('result', stackedImages)
 cv.waitKey(0)
 cv.destroyAllWindows()
-
-
 
 
 # build a URL for the static file
@@ -231,28 +239,41 @@ def log_the_user_in(username):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def load_events():
+    with open('data.json', 'r') as file:
+        return json.load(file)
 
 # Define a route(indicates what URL will trigger the function below)
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    events = load_events()
+
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
             flash('No file part')
             return redirect(request.url)
+        
+        # get the uploaded file
         file = request.files['file']
-        # if user does not select a file, the browser submits an empty part without a filename
+
+        # check if a file was selected
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        # if the file is one of the allowed types and it has a filename
+        
+        # check file extensions
         if file and allowed_file(file.filename): 
             # make the filename safe, remove unsupported characters   
             filename = secure_filename(file.filename)
             # save the file to the uploads folder
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            flash('File uploaded successfully')
+            # redirect back to index after upload
             return redirect(url_for('index'))
-    return render_template('index.html')
+    
+    # pass the events to the template
+    return render_template('index.html', events=events)
 
 
 @app.route('/login', methods=['GET', 'POST'])
