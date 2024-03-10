@@ -1,17 +1,42 @@
 {
     "event_1": {
-        "name": "European Career Fair at MIT",
-        "date": "02/03/2024",
-        "time": "9am - 4pm",
-        "location": "Johnson Race Track, MIT",
+        "name": "Extended Intelligence",
+        "date": "06/04/2024",
+        "time": "N/A",
+        "location": "Harvard University",
         "hosts": [
-            "ZEISS",
-            "MIT EUROPEAN CLUB",
-            "ACADEMICTRANSFER",
-            "Climeworks"
+            "Harvard GSD XR Club",
+            "Harvard Graduate School of Design",
+            "ArtTech Center"
         ],
-        "type": "in-person",
-        "website": "euro-career.mit.edu",
-        "signUpLink": "http://tinyurl.com/Ecf2024students"
+        "type": "in person",
+        "website": "HarvardXR.com",
+        "signUpLink": null
+    },
+    "event_2": {
+        "name": "GEM Hackathon",
+        "date": "03/02/2024",
+        "time": "N/A",
+        "location": "MIT 9-451",
+        "hosts": [
+            "Global Energy Monitor",
+            "MIT Society for Applied and Industrial Mathematics (SIAM)",
+            "Earth Hacks"
+        ],
+        "type": "N/A",
+        "website": "bit.ly/GEMHackathon",
+        "signUpLink": "https://docs.google.com/forms/d/e/1FAIpQLSf1QVGsYeq3oT8dUByp9qrW16-rfLZOvgz5b4RZpw6n6Ux-KQ/viewform"
+    },
+    "event_3": {
+        "name": "SPEAKER SERIES",
+        "date": "12/08/2024",
+        "time": "03:00 PM EST",
+        "location": "EXP room 204 or Zoom",
+        "hosts": [
+            "MGEN Co-op Team"
+        ],
+        "type": "virtual and in-person",
+        "website": "https://tinyurl.com/36c38xrp or https://tinyurl.com/yqad4x8k",
+        "signUpLink": "https://www.eventbrite.com/e/speaker-series-moviri-in-person-tickets-767650311747?aff=oddtdtcreator"
     }
 }
