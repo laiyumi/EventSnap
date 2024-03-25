@@ -9,15 +9,53 @@
 
 {% block content %}
     <h1>EventSnap</h1>
-
     <form method="POST" enctype="multipart/form-data" action="{{ url_for('index') }}">
         <div>
-            <input type="file" name="photo" accept="image/jpeg">
+            <input type="file" name="photo" accept="image/jpeg, image/png, image/jpg">
             <input type="submit" value="Upload">
         </div>
-
     </form>
+    <button id="start">Start Camera</button>
 
+    <div id="camera-popup" style="display: none;">
+        <video id="video" width="640" height="480" autoplay></video>
+        <button id="snap">Snap Photo</button>
+        <button id="close">Close Camera</button>
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    
+    <script>
+    var video = document.getElementById('video');
+    
+    // Get access to the camera
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+            video.srcObject = stream;
+            video.play();
+        });
+    }
+    
+    // Elements for taking the snapshot
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('2d');
+
+    // Trigger photo take
+    document.getElementById("snap").addEventListener("click", function() {
+        context.drawImage(video, 0, 0, 640, 480);
+    });
+    
+    // Start the camera
+    document.getElementById("start").addEventListener("click", function() { 
+        document.getElementById('camera-popup').style.display = 'block';
+    });
+
+    // Close the camera
+    document.getElementById("close").addEventListener("click", function() { 
+        document.getElementById('camera-popup').style.display = 'none';
+        video.pause();
+    });
+    </script>
+    
     <table>
         <thead>
             <tr>

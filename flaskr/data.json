@@ -38,5 +38,30 @@
         "type": "virtual and in-person",
         "website": "https://tinyurl.com/36c38xrp or https://tinyurl.com/yqad4x8k",
         "signUpLink": "https://www.eventbrite.com/e/speaker-series-moviri-in-person-tickets-767650311747?aff=oddtdtcreator"
+    },
+    "event_4": {
+        "name": "Tech & Tea",
+        "date": "25/03/2024",
+        "time": "6:00 PM N/A",
+        "location": "70 Forsyth St., Room FR 202, Northeastern University, Boston",
+        "hosts": [
+            "Husky Sisters Code"
+        ],
+        "type": "in person",
+        "website": "N/A",
+        "signUpLink": "https://forms.gle/MctCdp8BKxVHR1x56"
+    },
+    "event_5": {
+        "name": "NETWORKING AND PROFESSIONAL COMMUNICATION WORKSHOP",
+        "date": "20/09/2023",
+        "time": "10:00 AM EST - 12:00 PM EST",
+        "location": "N/A",
+        "hosts": [
+            "Elena Raileanu",
+            "Wei Wang"
+        ],
+        "type": "N/A",
+        "website": "@huskysisterscode",
+        "signUpLink": "https://qr.link/VAGBd7"
     }
 }
